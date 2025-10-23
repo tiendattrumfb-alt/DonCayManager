@@ -1,4 +1,4 @@
--- [[ Quản lý đơn cày – tối giản, auto-save, per-account, colored status ]]
+-- [[ Quản lí đơn – minimal, auto-save, per-account, polished UI ]]
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -45,27 +45,53 @@ sg.Name = "DonCayUI"; sg.ResetOnSpawn = false
 if syn and syn.protect_gui then pcall(syn.protect_gui, sg) end
 sg.Parent = (gethui and gethui()) or game:GetService("CoreGui")
 
-local frame = Instance.new("Frame", sg)
-frame.Size = UDim2.fromOffset(300, 170)
-frame.Position = UDim2.new(0, 30, 0, 120)
-frame.BackgroundColor3 = Color3.fromRGB(20,22,28)
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
-local border = Instance.new("UIStroke", frame)
-border.Color = Color3.fromRGB(70,90,255); border.Thickness = 1.4
+-- Shadow mềm phía sau khung
+local shadow = Instance.new("Frame", sg)
+shadow.Size = UDim2.fromOffset(320, 190)
+shadow.Position = UDim2.new(0, 22, 0, 112)
+shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
+shadow.BackgroundTransparency = 0.75
+shadow.ZIndex = 0
+local shCorner = Instance.new("UICorner", shadow); shCorner.CornerRadius = UDim.new(0, 18)
 
+-- Khung chính
+local frame = Instance.new("Frame", sg)
+frame.Size = UDim2.fromOffset(320, 190)
+frame.Position = UDim2.new(0, 20, 0, 110)
+frame.BackgroundColor3 = Color3.fromRGB(22,24,30)
+frame.ZIndex = 1
+local corner = Instance.new("UICorner", frame); corner.CornerRadius = UDim.new(0, 18)
+local border = Instance.new("UIStroke", frame); border.Color = Color3.fromRGB(95,120,255); border.Thickness = 1.2; border.Transparency = 0.15
+
+-- Gradient nhẹ cho nền
+local grad = Instance.new("UIGradient", frame)
+grad.Color = ColorSequence.new{
+  ColorSequenceKeypoint.new(0, Color3.fromRGB(26,28,36)),
+  ColorSequenceKeypoint.new(1, Color3.fromRGB(18,20,26))
+}
+grad.Rotation = 90
+
+-- Padding trong khung
+local pad = Instance.new("UIPadding", frame)
+pad.PaddingTop = UDim.new(0, 8)
+pad.PaddingBottom = UDim.new(0, 10)
+pad.PaddingLeft = UDim.new(0, 10)
+pad.PaddingRight = UDim.new(0, 10)
+
+-- Tiêu đề
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1,-16,0,30)
-title.Position = UDim2.new(0,8,0,6)
+title.Size = UDim2.new(1, -20, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 4)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.TextColor3 = Color3.fromRGB(235,235,245)
-title.Text = "Quản lý đơn cày"
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(240,240,248)
+title.Text = "Quản lí đơn"  -- theo yêu cầu
 
-local function mkLabel(text,y)
+local function mkLabel(text, y)
   local lb = Instance.new("TextLabel", frame)
-  lb.Position = UDim2.new(0,12,0,y)
-  lb.Size = UDim2.new(0,80,0,22)
+  lb.Position = UDim2.new(0, 10, 0, y)
+  lb.Size = UDim2.new(0, 94, 0, 24)
   lb.BackgroundTransparency = 1
   lb.Font = Enum.Font.Gotham
   lb.TextSize = 14
@@ -74,39 +100,40 @@ local function mkLabel(text,y)
   lb.Text = text
 end
 
-local function mkBox(y,w)
+local function mkBox(y, w)
   local b = Instance.new("TextBox", frame)
-  b.Position = UDim2.new(0,100,0,y)
-  b.Size = UDim2.fromOffset(w or 180,26)
-  b.BackgroundColor3 = Color3.fromRGB(30,32,40)
+  b.Position = UDim2.new(0, 104, 0, y)
+  b.Size = UDim2.fromOffset(w or 196, 28)
+  b.BackgroundColor3 = Color3.fromRGB(32,34,44)
   b.TextColor3 = Color3.fromRGB(230,230,240)
   b.Font = Enum.Font.Gotham
   b.TextSize = 14
   b.ClearTextOnFocus = false
-  Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-  Instance.new("UIStroke", b).Color = Color3.fromRGB(55,70,200)
+  local c = Instance.new("UICorner", b); c.CornerRadius = UDim.new(0, 12)
+  local s = Instance.new("UIStroke", b); s.Color = Color3.fromRGB(70,90,220); s.Thickness = 1
   return b
 end
 
-mkLabel("Đơn",44)
-local tbDesc = mkBox(44,180); tbDesc.Text = DATA.description
+mkLabel("Đơn", 44)
+local tbDesc = mkBox(44, 196); tbDesc.Text = DATA.description
 
-mkLabel("Trạng thái",76)
+mkLabel("Trạng thái", 80)
 local statusBtn = Instance.new("TextButton", frame)
-statusBtn.Position = UDim2.new(0,100,0,76)
-statusBtn.Size = UDim2.fromOffset(130,26)
+statusBtn.Position = UDim2.new(0, 104, 0, 80)
+statusBtn.Size = UDim2.fromOffset(140, 28)
 statusBtn.Font = Enum.Font.GothamBold
 statusBtn.TextSize = 14
 statusBtn.TextColor3 = Color3.fromRGB(255,255,255)
-Instance.new("UICorner", statusBtn).CornerRadius = UDim.new(0,8)
-local statusStroke = Instance.new("UIStroke", statusBtn); statusStroke.Thickness = 1.2
+statusBtn.AutoButtonColor = true
+local stCorner = Instance.new("UICorner", statusBtn); stCorner.CornerRadius = UDim.new(0, 12)
+local statusStroke = Instance.new("UIStroke", statusBtn); statusStroke.Thickness = 1.1
 
 -- màu theo trạng thái
 local STATUS = {"Đang làm","Tạm dừng","Hoàn thành"}
 local STYLE = {
-  ["Đang làm"]   = {bg=Color3.fromRGB(40,120,255),  stroke=Color3.fromRGB(70,150,255)},
-  ["Tạm dừng"]   = {bg=Color3.fromRGB(255,180,60),  stroke=Color3.fromRGB(255,200,120)},
-  ["Hoàn thành"] = {bg=Color3.fromRGB(60,200,100),  stroke=Color3.fromRGB(100,230,150)},
+  ["Đang làm"]   = {bg=Color3.fromRGB(60,120,255),  stroke=Color3.fromRGB(90,150,255)},
+  ["Tạm dừng"]   = {bg=Color3.fromRGB(255,185,70),  stroke=Color3.fromRGB(255,210,125)},
+  ["Hoàn thành"] = {bg=Color3.fromRGB(60,200,120),  stroke=Color3.fromRGB(100,230,160)},
 }
 local function applyState(s)
   local st = STYLE[s] or STYLE["Đang làm"]
@@ -126,12 +153,12 @@ end)
 
 -- dòng nhắc trạng thái lưu
 local hint = Instance.new("TextLabel", frame)
-hint.Position = UDim2.new(0,12,0,108)
-hint.Size = UDim2.new(1,-24,0,18)
+hint.Position = UDim2.new(0, 10, 0, 116)
+hint.Size = UDim2.new(1, -20, 0, 18)
 hint.BackgroundTransparency = 1
 hint.Font = Enum.Font.Gotham
 hint.TextSize = 12
-hint.TextColor3 = Color3.fromRGB(160,170,190)
+hint.TextColor3 = Color3.fromRGB(165,175,195)
 hint.Text = "Đã lưu (auto) ✓"
 hint.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -157,6 +184,7 @@ UIS.InputChanged:Connect(function(i)
   if dragging and i.UserInputType==Enum.UserInputType.MouseMovement then
     local d=i.Position-dragStart
     frame.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)
+    shadow.Position=UDim2.new(startPos.X.Scale, startPos.X.Offset+d.X+2, startPos.Y.Scale, startPos.Y.Offset+d.Y+2)
   end
 end)
 
